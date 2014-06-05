@@ -6,12 +6,13 @@
  */
 
 
-#include <iostream>
-#include "SOM.h"
+
 #include </usr/local/include/eigen3/Eigen/eigen>
+#include <iostream>
 #include <sstream>
 #include <fstream>
 #include <string>
+#include "SOM.h"
 #include "ClassesSOM.h"
 
 using namespace std;
@@ -19,10 +20,12 @@ using namespace std;
 int main()
 {
 SOM test;
-test.ReadData("/Users/icortes/Desktop/SOM/SOM/SOM/example.csv", 3, 3);
-test.InitializeMap(4, 4, 3);
-test.Train(10);
-test.PrintToCSVFileRowWise("/Users/icortes/Desktop/SOM/SOM/SOM/results.csv", test.SOMMap, 4, 4,3);
-return 0;
+test.ReadData("/Users/icortes/Desktop/SOMcpp/SOM/colorsInput.csv", 3000, 3);
+test.InitializeMap(250, 250);
+test.Train(25000 + 250000);
+test.PrintToCSVFileRowWise("/Users/icortes/Desktop/SOMcpp/SOM/ColorsResults.csv", test.SOMMap, test.xsize, test.ysize,test.InputVectorSize);
+    
+    //std::cout << test.MaxValueInputData;
+    return 0;
 }
 

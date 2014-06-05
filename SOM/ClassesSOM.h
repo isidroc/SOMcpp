@@ -25,8 +25,21 @@ typedef Eigen::Matrix<Eigen::VectorXd, Eigen::Dynamic, Eigen::Dynamic> MatrixOfV
 //////////////////////////////////////////////
 class EuclideanDistance {
 public:
-    float EvaluateKernel(Eigen::VectorXd v1, Eigen::VectorXd v2){
+    float EvaluateDistance(Eigen::VectorXd v1, Eigen::VectorXd v2){
         float KernelValue = (v1 - v2).norm();
+        return KernelValue;
+    }
+};
+////////////////////////////////////////////////////////////////////////////////////////////
+
+//////////////////////////////////////////////
+// Radial Kernel Distance
+//////////////////////////////////////////////
+class RadialKernelDistance {
+public:
+    float sigma;
+    float EvaluateDistance(Eigen::VectorXd v1, Eigen::VectorXd v2, float sigma){
+        float KernelValue = exp(-((v1 - v2).norm() / sigma));
         return KernelValue;
     }
 };
@@ -54,17 +67,20 @@ public:
  //////////////////////////////////////////////
 class GetInputVectors {
 public:
-     
+    float MaxValueInputData=0;
+    MatrixOfVectors  InputVectors;
+    int InputVectorSize;
+    
  bool fileExist(const char *fileName){
     std::ifstream infile(fileName);
     return infile.good();
  };
-     
- float MaxValueInputData;
- MatrixOfVectors  InputVectors;
+    
 
  void ReadData(const char *filename, int NumberVectors, int InputVectorSize){
  MatrixOfVectors InputVectors(NumberVectors, 1);
+ GetInputVectors::InputVectorSize = InputVectorSize;
+ float MaxValueInputData;
  fileExist(filename);
  std::ifstream data(filename);
  std::string line;
@@ -72,7 +88,7 @@ public:
  else{printf("Cannot open input file.. exiting..\n");}
  
  int rowIndex = 0;
- float MaxValueInputData=0;
+
  
  while(std::getline(data,line)){
      int colIndex = 0;
@@ -82,13 +98,14 @@ public:
  
         while(std::getline(lineStream,cell,',')){
             InputVector(colIndex) =std::stof(cell);
-            if (std::stof(cell) > MaxValueInputData){MaxValueInputData = std::stof(cell);}
+            if (std::stof(cell) > GetInputVectors::MaxValueInputData){GetInputVectors::MaxValueInputData = std::stof(cell);}
             colIndex++;
         }
      InputVectors(rowIndex,0) = InputVector;
      rowIndex++;
  }
-     GetInputVectors::InputVectors = InputVectors;
+     data.close();
+     printf("Closing input file..\n");
  }
  };
  ///////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -97,22 +114,21 @@ public:
  //////////////////////////////////////////////
  // SOM Map " Carte "
  //////////////////////////////////////////////
- class Initialize2DMap{
+class Initialize2DMap : public GetInputVectors{
  public:
  MatrixOfVectors SOMMap;
  float MaxValueInputData; // the maximum value in the input data. To have the same range of values in the SOM
  int xsize, ysize;
      
- void InitializeMap(int xsize, int ysize, int InputVectorSize){
+ void InitializeMap(int xsize, int ysize){
      Initialize2DMap::xsize = xsize;
      Initialize2DMap::ysize = ysize;
-
- //MaxValueInputData = MaxValueInputData;
- MatrixOfVectors SOMMap(xsize,ysize);
+     MatrixOfVectors SOMMap(xsize,ysize);
+     
      for (int i=0; i<xsize; i++){
         for (int j=0; j<ysize; j++){
             Eigen::VectorXd now = Eigen::VectorXd::Random(InputVectorSize);
-            now = now * MaxValueInputData;
+            now  = (now.cwiseAbs() / now.cwiseAbs().maxCoeff()) * GetInputVectors::MaxValueInputData; // random values between 0 and 1
             SOMMap(i,j) = now;
         }
      }
@@ -150,7 +166,7 @@ public:
 class SOMNeighbourhoodFunction : public RadialKernel {
 public:
     float NeighbourhoodFunction(float alpha, Eigen::VectorXd input, Eigen::VectorXd bmu){
-        float value = alpha + EvaluateKernel(input, bmu, pow(alpha,2));
+        float value = alpha * EvaluateKernel(input, bmu, pow(alpha,2));
         return value;
     }
 };
@@ -197,38 +213,42 @@ class PrintSOM {
 /// Train the SOM
 //////////////////////////////////////////////
  
-class SOMTrain : public GetInputVectors, public Initialize2DMap, public GaussianDistribution,
-public SOMLearningFunction, public PrintSOM{
+class SOMTrain :  public Initialize2DMap, public GaussianDistribution,
+public SOMLearningFunction, public PrintSOM, public EuclideanDistance{
  public:
  int Iters;
  int BestXMap, BestYMap = 0;
  float Score, ScoreNow = 0;
- float alpha;
+ float alpha, alphaInit;
      
  void Train(int Iters){  //, MatrixOfVectors InputVectors, int xsize, int ysize, MatrixOfVectors SOMMap
      // Initialize alpha
-     SOMTrain::alpha = 5.0;
+     SOMTrain::alpha = 1;
+     SOMTrain::alphaInit=1;
+     
      
      for (int i=0; i<Iters; i++){
          for (int j=0; j<SOMTrain::InputVectors.rows();j++){ //XX the order should be random
              // Find the BMU
              for (int RowMap=0;RowMap<SOMTrain::xsize;RowMap++){
                  for (int ColMap=0;ColMap<ysize;ColMap++){
-                     ScoreNow = EvaluateKernel(SOMMap(RowMap,ColMap), InputVectors(j,0),1.0);
+                     ScoreNow = EvaluateDistance(Initialize2DMap::SOMMap(RowMap,ColMap), InputVectors(j,0)); //XX ,1.0 sigma
                      if (SOMTrain::ScoreNow > Score){SOMTrain::Score = ScoreNow; SOMTrain::BestXMap=RowMap, SOMTrain::BestYMap=ColMap;}
                   }
              }
              // Update the BMUs
              for (int RowMap=0;RowMap<SOMTrain::xsize;RowMap++){
                  for (int ColMap=0;ColMap<ysize;ColMap++){
-                     Eigen::VectorXd BMUUpdated = LearnFunction(InputVectors(j,0), SOMMap(RowMap,ColMap), SOMTrain::alpha);
+                     Eigen::VectorXd BMUUpdated = LearnFunction(InputVectors(j,0), Initialize2DMap::SOMMap(RowMap,ColMap), SOMTrain::alpha);
+                     Initialize2DMap::SOMMap(RowMap,ColMap) = BMUUpdated;
                      
                  }
              }
              
          }
      // Update alpha
-         SOMTrain::alpha = Gaussian(i,5);
+         SOMTrain::alpha = alphaInit * Gaussian(i,1);
+         std::cout << SOMTrain::alpha << "\n";
          //std::cout << alpha << SOMTrain::alpha << std::endl;
  }
 }
