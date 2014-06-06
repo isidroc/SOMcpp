@@ -14,18 +14,30 @@
 #include <string>
 #include "SOM.h"
 #include "ClassesSOM.h"
+#include <stdlib.h>     /* srand, rand */
+
 
 using namespace std;
 
 int main()
 {
-SOM test;
+
+    SOM test;
 test.ReadData("/Users/icortes/Desktop/SOMcpp/SOM/colorsInput.csv", 3000, 3);
-test.InitializeMap(250, 250);
-test.Train(25000 + 250000);
+//test.ReadData("/Users/icortes/Desktop/SOMcpp/SOM/ThreeColors.txt", 3, 3);
+test.InitializeMap(50, 50);
+test.PrintToCSVFileRowWise("/Users/icortes/Desktop/SOMcpp/SOM/SOMColorsBeforeTraining.csv", test.SOMMap, test.xsize, test.ysize,test.InputVectorSize);
+
+    test.SigmaNeighbouringInitial = 50;
+    test.LearningRateInitial = 0.1;
+    
+test.Train(1000);
 test.PrintToCSVFileRowWise("/Users/icortes/Desktop/SOMcpp/SOM/ColorsResults.csv", test.SOMMap, test.xsize, test.ysize,test.InputVectorSize);
     
     //std::cout << test.MaxValueInputData;
+    
+   std::cout <<  test.LearningRate << "\n";
+   std::cout <<  test.SigmaNeighbouring << "\n";
     return 0;
 }
 
