@@ -165,7 +165,7 @@ class Initialize2DMap : public GetInputVectors{
 class GaussianDistribution {
 public:
     float Gaussian(float x, float sigma){
-        float value = exp(-(x/sigma));
+        float value = exp(-((float)x/(float)sigma));
         return value;
     }
 };
@@ -178,17 +178,14 @@ public:
 // Learning (or updating) Function
 //      BMU(t+1) = BMU(t) + LearningRate(t) * NeighbourhoodFunction(t)*[InputVector - BMU(t)]
 // NeighbourhoodFunction
-//      NeighbourhoodFunction(t) = alpha(t) + RadialKernel(InputVector, BMU(t)), where sigma equals alpha(t)^2
-// The alpha values at eact t value will be updated with a Gaussian function, with sigma value will be equal to 1/5*(NIters)
-// So alpha(t) = exp( - t/5)
-
+//
 class SOMNeighbourhoodFunction  {
 public:
     float NeighbourhoodFunction(int BMUX, int BMUY, int BMUNowX, int BMUNowY, float SigmaNeighbouring){
         float value = (float)(pow(BMUX - BMUNowX,2) + pow(BMUY - BMUNowY,2)) / (float)(2*pow(SigmaNeighbouring,2)) ;
-        value = -value;
-        value = exp(value);
-        //std::cout  << (pow(BMUX - BMUNowX,2) + pow(BMUY - BMUNowY,2)) << 2*pow(SigmaNeighbouring,2) << value << "\n";
+        value = exp(-value);
+       // value = exp(value);
+       // std::cout  << (float)(pow(BMUX - BMUNowX,2) + pow(BMUY - BMUNowY,2)) << (float)2*pow(SigmaNeighbouring,2) << value << "\n";
         //std::cout << value << "\n";
         return value;
     }
@@ -208,8 +205,8 @@ public:
 
 class UpdateSOMLearningRate {
 public:
-    float UpdateLearningRate(float L0, float Iter, float lambda){
-        float value = L0*exp(-(Iter/lambda));
+    float UpdateLearningRate(float L0, float LearningRateFinal, float Iter, float lambda){
+        float value = (L0 - LearningRateFinal) * L0*exp(-((float)Iter/(float)lambda)) + LearningRateFinal;
         return value;
     }
 };
@@ -218,8 +215,8 @@ public:
 
 class UpdateSOMSigmaNeighbouring {
 public:
-    float UpdateSigmaNeighbouring(float SigmaNeighbouringZero, float Iter, float lambda){
-        float value = SigmaNeighbouringZero * exp(-(Iter/lambda));
+    float UpdateSigmaNeighbouring(float SigmaNeighbouringZero, float SigmaNeighbourhoodFinal, float Iter, float lambda){
+        float value = (SigmaNeighbouringZero -SigmaNeighbourhoodFinal) * exp(-((float)Iter/(float)lambda)) + SigmaNeighbourhoodFinal;
         return value;
     }
 };
@@ -261,15 +258,19 @@ public SOMLearningFunction, public PrintSOM, public EuclideanDistance, public Up
  int Iters;
  int BestXMap, BestYMap = 0;
  float Score, ScoreNow = 0;
- float LearningRateInitial, SigmaNeighbouringInitial, SigmaNeighbouring, LearningRate, lambda;
+    float LearningRateInitial, LearningRateFinal, SigmaNeighbouringInitial, SigmaNeighbourhoodFinal, SigmaNeighbouring, LearningRate, lambda;
      
  void Train(int Iters){  //, MatrixOfVectors InputVectors, int xsize, int ysize, MatrixOfVectors SOMMap
      // Initialize alpha
      SOMTrain::SigmaNeighbouringInitial;
-     SOMTrain::SigmaNeighbouring = SOMTrain::SigmaNeighbouringInitial;
+     SOMTrain::SigmaNeighbourhoodFinal;
      SOMTrain::LearningRateInitial;
+     SOMTrain::LearningRateFinal;
      SOMTrain::LearningRate=SOMTrain::LearningRateInitial;
-     SOMTrain::lambda = (Iters*SOMTrain::InputVectors.rows())/(SOMTrain::xsize/2);
+     SOMTrain::SigmaNeighbouring=SOMTrain::SigmaNeighbouringInitial;
+     std::cout <<  SOMTrain::SigmaNeighbouring <<std::endl;
+     SOMTrain::lambda = (float)(Iters)/(float)(SOMTrain::xsize/2);
+     
      Eigen::VectorXd BMU;
      
      for (int i=0; i<Iters; i++){
@@ -293,8 +294,8 @@ public SOMLearningFunction, public PrintSOM, public EuclideanDistance, public Up
                      int CoordY = ColMap;
                      if (CoordX < (SOMTrain::xsize/2)) {CoordX = RowMap;}
                      if (CoordX >= (SOMTrain::xsize/2)){CoordX = (SOMTrain::xsize/2) - RowMap%(SOMTrain::xsize/2);}
-                     if (CoordY < (SOMTrain::ysize/2)) {CoordY = RowMap;}
-                     if (CoordY >= (SOMTrain::ysize/2)){CoordY = (SOMTrain::ysize/2) - RowMap%(SOMTrain::xsize/2);}
+                     if (CoordY < (SOMTrain::ysize/2)) {CoordY = ColMap;}
+                     if (CoordY >= (SOMTrain::ysize/2)){CoordY = (SOMTrain::ysize/2) - ColMap%(SOMTrain::xsize/2);}
                      //std::cout << CoordX << "\n";// ;<< "  " << CoordY << std::endl;
                      
                      Eigen::VectorXd BMUUpdated = LearnFunction(Initialize2DMap::SOMMap(RowMap,ColMap),InputVectors(j,0),
@@ -308,10 +309,9 @@ public SOMLearningFunction, public PrintSOM, public EuclideanDistance, public Up
              
          //}
      // Update Learning Rate
-         SOMTrain::LearningRate = UpdateLearningRate(SOMTrain::LearningRateInitial, i, SOMTrain::lambda);
-         SOMTrain::SigmaNeighbouring = UpdateSigmaNeighbouring(SOMTrain::SigmaNeighbouringInitial, i, SOMTrain::lambda);
+         SOMTrain::LearningRate = UpdateLearningRate(SOMTrain::LearningRateInitial,SOMTrain::LearningRateFinal, i, SOMTrain::lambda);
+         SOMTrain::SigmaNeighbouring = UpdateSigmaNeighbouring(SOMTrain::SigmaNeighbouringInitial,SOMTrain::SigmaNeighbourhoodFinal,  i, SOMTrain::lambda);
          
-         //std::cout << "learning rate "<< SOMTrain::LearningRate << "\n" << "sigma neighbours " << SOMTrain::SigmaNeighbouring;
          
  }
 }
