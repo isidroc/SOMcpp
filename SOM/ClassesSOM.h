@@ -292,9 +292,9 @@ public SOMLearningFunction, public PrintSOM, public EuclideanDistance, public Up
                      
                      int CoordX = RowMap;
                      int CoordY = ColMap;
-                     if (CoordX < (SOMTrain::xsize/2)) {CoordX = RowMap;}
+                    // if (CoordX < (SOMTrain::xsize/2)) {CoordX = RowMap;}
                      if (CoordX >= (SOMTrain::xsize/2)){CoordX = (SOMTrain::xsize/2) - RowMap%(SOMTrain::xsize/2);}
-                     if (CoordY < (SOMTrain::ysize/2)) {CoordY = ColMap;}
+                     //if (CoordY < (SOMTrain::ysize/2)) {CoordY = ColMap;}
                      if (CoordY >= (SOMTrain::ysize/2)){CoordY = (SOMTrain::ysize/2) - ColMap%(SOMTrain::xsize/2);}
                      //std::cout << CoordX << "\n";// ;<< "  " << CoordY << std::endl;
                      

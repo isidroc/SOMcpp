@@ -28,12 +28,12 @@ test.ReadData("/Users/icortes/Desktop/SOMcpp/SOM/colorsInput.csv", 3000, 3);
 test.InitializeMap(50, 50);
 test.PrintToCSVFileRowWise("/Users/icortes/Desktop/SOMcpp/SOM/SOMColorsBeforeTraining.csv", test.SOMMap, test.xsize, test.ysize,test.InputVectorSize);
 
-    test.SigmaNeighbouringInitial = 50;
+    test.SigmaNeighbouringInitial = 25;
     test.SigmaNeighbourhoodFinal = 1;
-    test.LearningRateInitial = 0.5;
+    test.LearningRateInitial = 0.8;
     test.LearningRateFinal = 0.25;
     
-test.Train(10000);
+test.Train(100);
 test.PrintToCSVFileRowWise("/Users/icortes/Desktop/SOMcpp/SOM/ColorsResults.csv", test.SOMMap, test.xsize, test.ysize,test.InputVectorSize);
     
     //std::cout << test.MaxValueInputData;
