@@ -9,7 +9,8 @@
 #ifndef SOM_Classes_SOM_h
 #define SOM_Classes_SOM_h
 
-#include </usr/local/include/eigen3/Eigen/eigen>
+#include <time.h>
+#include </eigen/Eigen/eigen>
 #include "SOM.h"
 #include <iostream>
 #include <sstream>
@@ -24,6 +25,9 @@ typedef Eigen::Matrix<Eigen::VectorXd, Eigen::Dynamic, Eigen::Dynamic> MatrixOfV
 //////////////////////////////////////////////
 class RandomGenerator {
     public :
+    RandomGenerator(){
+        srand(time(NULL));
+    }
    float GenerateRandomNumber(int RandMax){
        float value = rand() % RandMax;
         return value;
@@ -38,8 +42,14 @@ class RandomGenerator {
 class EuclideanDistance {
 public:
     float EvaluateDistance(Eigen::VectorXd v1, Eigen::VectorXd v2){
-        float KernelValue = (v1 - v2).norm();
-        return KernelValue;
+        //float KernelValue = (v1 - v2).norm();
+        double distance = 0;
+        for (int i=0; i<v2.cols(); ++i)
+        {
+            distance += (v2(i) - v1(i)) * (v2(i) - v1(i));
+        }
+        return sqrt(distance);
+       // return KernelValue;
     }
 };
 ////////////////////////////////////////////////////////////////////////////////////////////
@@ -88,7 +98,6 @@ public:
     std::ifstream infile(fileName);
     return infile.good();
  };
-   
 
  void ReadData(const char *filename, int NumberVectors, int InputVectorSize){
  MatrixOfVectors InputVectors(NumberVectors, 1);
@@ -258,7 +267,9 @@ public SOMLearningFunction, public PrintSOM, public EuclideanDistance, public Up
  int Iters;
  int BestXMap, BestYMap = 0;
  float Score, ScoreNow = 0;
-    float LearningRateInitial, LearningRateFinal, SigmaNeighbouringInitial, SigmaNeighbourhoodFinal, SigmaNeighbouring, LearningRate, lambda;
+    float LearningRateInitial, LearningRateFinal, SigmaNeighbouringInitial, SigmaNeighbourhoodFinal, lambda;
+    
+
      
  void Train(int Iters){  //, MatrixOfVectors InputVectors, int xsize, int ysize, MatrixOfVectors SOMMap
      // Initialize alpha
@@ -266,55 +277,77 @@ public SOMLearningFunction, public PrintSOM, public EuclideanDistance, public Up
      SOMTrain::SigmaNeighbourhoodFinal;
      SOMTrain::LearningRateInitial;
      SOMTrain::LearningRateFinal;
-     SOMTrain::LearningRate=SOMTrain::LearningRateInitial;
-     SOMTrain::SigmaNeighbouring=SOMTrain::SigmaNeighbouringInitial;
-     std::cout <<  SOMTrain::SigmaNeighbouring <<std::endl;
+     float LearningRate[SOMTrain::NumberInputVectors];
+     float SigmaNeighbouring[SOMTrain::NumberInputVectors];
+     //std::cout <<  SOMTrain::SigmaNeighbouring[1] <<std::endl;
      SOMTrain::lambda = (float)(Iters)/(float)(SOMTrain::xsize/2);
-     
+     int finned =0;
      Eigen::VectorXd BMU;
-     
-     for (int i=0; i<Iters; i++){
-         //for (int j=0; j<SOMTrain::InputVectors.rows();j++){ //XX the order should be random
-         int j = GenerateRandomNumber(SOMTrain::NumberInputVectors);
-            // Find the BMU
-             for (int RowMap=0;RowMap<SOMTrain::xsize;RowMap++){
-                 for (int ColMap=0;ColMap<ysize;ColMap++){
-                     ScoreNow = EvaluateDistance(Initialize2DMap::SOMMap(RowMap,ColMap), InputVectors(j,0)); //XX ,1.0 sigma
-                     if (ScoreNow > SOMTrain::Score){SOMTrain::Score = ScoreNow; SOMTrain::BestXMap=RowMap, SOMTrain::BestYMap=ColMap;}
-                  }
-             }
-             BMU = Initialize2DMap::SOMMap(SOMTrain::BestXMap,SOMTrain::BestYMap);
-             // Update the BMUs
+     int i[SOMTrain::NumberInputVectors];
+     for(int ij = 0;ij<SOMTrain::NumberInputVectors;ij++){
+         i[ij]=0;
+         LearningRate[ij]=SOMTrain::LearningRateInitial;
+         SigmaNeighbouring[ij]=SOMTrain::SigmaNeighbouringInitial;
+     }
+     int bmuX[SOMTrain::NumberInputVectors];
+     int bmuY[SOMTrain::NumberInputVectors];
+     while(finned<Iters){
+        int j = GenerateRandomNumber(SOMTrain::NumberInputVectors);
+        if(i[j]<Iters){
+            if(i[j] == 0){
+                SOMTrain::Score = 0;
+                for (int RowMap=0;RowMap<SOMTrain::xsize;RowMap++){
+                    for (int ColMap=0;ColMap<SOMTrain::ysize;ColMap++){
+                        ScoreNow = EvaluateDistance(Initialize2DMap::SOMMap(RowMap,ColMap), InputVectors(j,0)); //XX ,1.0 sigma
+                        if (ScoreNow > SOMTrain::Score){SOMTrain::Score = ScoreNow; SOMTrain::BestXMap=RowMap, SOMTrain::BestYMap=ColMap;}
+                    }
+                }
+                //BMU = Initialize2DMap::SOMMap(SOMTrain::BestXMap,SOMTrain::BestYMap);
+                bmuX[j] = SOMTrain::BestXMap;
+                bmuY[j] = SOMTrain::BestYMap;
+            }
+                // Update the BMUs
 
-             for (int RowMap=0;RowMap<SOMTrain::xsize;RowMap++){
-                 for (int ColMap=0;ColMap<ysize;ColMap++){
-                     
-                     
-                     int CoordX = RowMap;
-                     int CoordY = ColMap;
-                    // if (CoordX < (SOMTrain::xsize/2)) {CoordX = RowMap;}
-                     if (CoordX >= (SOMTrain::xsize/2)){CoordX = (SOMTrain::xsize/2) - RowMap%(SOMTrain::xsize/2);}
-                     //if (CoordY < (SOMTrain::ysize/2)) {CoordY = ColMap;}
-                     if (CoordY >= (SOMTrain::ysize/2)){CoordY = (SOMTrain::ysize/2) - ColMap%(SOMTrain::xsize/2);}
-                     //std::cout << CoordX << "\n";// ;<< "  " << CoordY << std::endl;
-                     
-                     Eigen::VectorXd BMUUpdated = LearnFunction(Initialize2DMap::SOMMap(RowMap,ColMap),InputVectors(j,0),
-                     SOMTrain::BestXMap, SOMTrain::BestYMap, CoordX, CoordY, SOMTrain::SigmaNeighbouring, SOMTrain::LearningRate);
-                     Initialize2DMap::SOMMap(RowMap,ColMap) = BMUUpdated;
-                     //std::cout << BMUUpdated << std::endl;
-                     
-                 }
-             }
-             //j+(i*InputVectors.rows());
-             
-         //}
-     // Update Learning Rate
-         SOMTrain::LearningRate = UpdateLearningRate(SOMTrain::LearningRateInitial,SOMTrain::LearningRateFinal, i, SOMTrain::lambda);
-         SOMTrain::SigmaNeighbouring = UpdateSigmaNeighbouring(SOMTrain::SigmaNeighbouringInitial,SOMTrain::SigmaNeighbourhoodFinal,  i, SOMTrain::lambda);
-         
-         
- }
-}
+                for (int RowMap=0;RowMap<SOMTrain::xsize;RowMap++){
+                    for (int ColMap=0;ColMap<ysize;ColMap++){
+                        
+                        
+                        int CoordX = RowMap;
+                        int CoordY = ColMap;
+                        // if (CoordX < (SOMTrain::xsize/2)) {CoordX = RowMap;}
+                    //  if (CoordX >= (SOMTrain::xsize/2)){CoordX = (SOMTrain::xsize/2) - RowMap%(SOMTrain::xsize/2);}
+                        //if (CoordY < (SOMTrain::ysize/2)) {CoordY = ColMap;}
+                        //if (CoordY >= (SOMTrain::ysize/2)){CoordY = (SOMTrain::ysize/2) - ColMap%(SOMTrain::xsize/2);}
+                        //std::cout << CoordX << "\n";// ;<< "  " << CoordY << std::endl;
+                        
+                        Eigen::VectorXd BMUUpdated = LearnFunction(Initialize2DMap::SOMMap(RowMap,ColMap),InputVectors(j,0),
+                        bmuX[j], bmuY[j], CoordX, CoordY, SigmaNeighbouring[j], LearningRate[j]);
+                        Initialize2DMap::SOMMap(RowMap,ColMap) = BMUUpdated;
+                        //std::cout << SOMTrain::BestXMap << std::endl;
+                        
+                    }
+                }
+                //j+(i*InputVectors.rows());
+                
+            //}
+        // Update Learning Rate
+            LearningRate[j] = UpdateLearningRate(SOMTrain::LearningRateInitial,SOMTrain::LearningRateFinal, i[j], SOMTrain::lambda);
+            SigmaNeighbouring[j] = UpdateSigmaNeighbouring(SOMTrain::SigmaNeighbouringInitial,SOMTrain::SigmaNeighbourhoodFinal,  i[j], SOMTrain::lambda);
+            
+                i[j]++;
+            }else if(i[j]=Iters){
+               finned++; 
+                i[j]++;
+            }
+            
+        }
+        /*for (i[j]=0; i<Iters; ){
+            //for (int j=0; j<SOMTrain::InputVectors.rows();j++){ //XX the order should be random
+            
+                // Find the BMU
+                
+        }*/
+    }
 };
  ///////////////////////////////////////////////////////////////////////////////////////////////////////
 #endif

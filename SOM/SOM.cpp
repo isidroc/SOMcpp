@@ -8,7 +8,7 @@
 
 #include "SOM.h"
 #include "ClassesSOM.h"
-#include </usr/local/include/eigen3/Eigen/eigen>
+#include </eigen/Eigen/eigen>
 #include <iostream>
 #include <sstream>
 #include <fstream>

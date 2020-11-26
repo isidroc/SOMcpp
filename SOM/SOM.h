@@ -9,7 +9,7 @@
 #ifndef __SOM__SOM__
 #define __SOM__SOM__
 
-#include </usr/local/include/eigen3/Eigen/eigen>
+#include </eigen/Eigen/eigen>
 #include <iostream>
 #include <sstream>
 #include <fstream>

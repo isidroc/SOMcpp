@@ -7,7 +7,8 @@
 
 
 
-#include </usr/local/include/eigen3/Eigen/eigen>
+
+
 #include <iostream>
 #include <sstream>
 #include <fstream>
@@ -23,26 +24,26 @@ int main()
 {
 
     SOM test;
-test.ReadData("/Users/icortes/Desktop/SOMcpp/SOM/colorsInput.csv", 3000, 3);
-//test.ReadData("/Users/icortes/Desktop/SOMcpp/SOM/ThreeColors.txt", 3, 3);
+//test.ReadData("C:/Users/4ever/Documents/SOMcpp-master/SOM/example.csv", 13, 3);
+test.ReadData("C:/Users/4ever/Documents/SOMcpp-master/SOM/ThreeColors.txt", 3, 3);
 test.InitializeMap(50, 50);
-test.PrintToCSVFileRowWise("/Users/icortes/Desktop/SOMcpp/SOM/SOMColorsBeforeTraining.csv", test.SOMMap, test.xsize, test.ysize,test.InputVectorSize);
+test.PrintToCSVFileRowWise("C:/Users/4ever/Documents/SOMcpp-master/SOM/SOMColorsBeforeTraining2.csv", test.SOMMap, test.xsize, test.ysize,test.InputVectorSize);
 
-    test.SigmaNeighbouringInitial = 25;
+    test.SigmaNeighbouringInitial = 50;
     test.SigmaNeighbourhoodFinal = 1;
-    test.LearningRateInitial = 0.8;
+    test.LearningRateInitial = 0.6;
     test.LearningRateFinal = 0.25;
     
-test.Train(100);
-test.PrintToCSVFileRowWise("/Users/icortes/Desktop/SOMcpp/SOM/ColorsResults.csv", test.SOMMap, test.xsize, test.ysize,test.InputVectorSize);
+test.Train(200);
+test.PrintToCSVFileRowWise("C:/Users/4ever/Documents/SOMcpp-master/SOM/ColorsResults2.csv", test.SOMMap, test.xsize, test.ysize,test.InputVectorSize);
     
     //std::cout << test.MaxValueInputData;
     
     std::cout << "lambda :" << test.lambda << "\n";
     std::cout <<  "L0 :" << test.LearningRateInitial << "\n";
     std::cout <<  "Sigma0 Neighbours:" << test.SigmaNeighbouringInitial << "\n";
-    std::cout <<  "L :" << test.LearningRate << "\n";
-    std::cout <<  "Sigma Neighbours:" << test.SigmaNeighbouring << "\n";
+    //std::cout <<  "L :" << test.LearningRate << "\n";
+    //std::cout <<  "Sigma Neighbours:" << test.SigmaNeighbouring << "\n";
     return 0;
 }
 
