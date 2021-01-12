@@ -214,8 +214,8 @@ public:
 
 class UpdateSOMLearningRate {
 public:
-    float UpdateLearningRate(float L0, float LearningRateFinal, float Iter, float lambda){
-        float value = (L0 - LearningRateFinal) * L0*exp(-((float)Iter/(float)lambda)) + LearningRateFinal;
+    float UpdateLearningRate(float Iter,int maxIters){
+        float value = 0.1*exp(-((float)Iter/maxIters));
         return value;
     }
 };
@@ -224,8 +224,8 @@ public:
 
 class UpdateSOMSigmaNeighbouring {
 public:
-    float UpdateSigmaNeighbouring(float SigmaNeighbouringZero, float SigmaNeighbourhoodFinal, float Iter, float lambda){
-        float value = (SigmaNeighbouringZero -SigmaNeighbourhoodFinal) * exp(-((float)Iter/(float)lambda)) + SigmaNeighbourhoodFinal;
+    float UpdateSigmaNeighbouring(float Iter,int maxIters,int radius){
+        float value = radius*exp(-((float)Iter/(maxIters/(log(radius)))));
         return value;
     }
 };
@@ -267,27 +267,22 @@ public SOMLearningFunction, public PrintSOM, public EuclideanDistance, public Up
  int Iters;
  int BestXMap, BestYMap = 0;
  float Score, ScoreNow = 0;
-    float LearningRateInitial, LearningRateFinal, SigmaNeighbouringInitial, SigmaNeighbourhoodFinal, lambda;
     
 
      
  void Train(int Iters){  //, MatrixOfVectors InputVectors, int xsize, int ysize, MatrixOfVectors SOMMap
      // Initialize alpha
-     SOMTrain::SigmaNeighbouringInitial;
-     SOMTrain::SigmaNeighbourhoodFinal;
-     SOMTrain::LearningRateInitial;
-     SOMTrain::LearningRateFinal;
+     
      float LearningRate;
      float SigmaNeighbouring;
      //std::cout <<  SOMTrain::SigmaNeighbouring[1] <<std::endl;
-     SOMTrain::lambda = (float)(Iters)/(float)(SOMTrain::xsize/2);
      int finned =0;
      Eigen::VectorXd BMU;
-         LearningRate=SOMTrain::LearningRateInitial;
-         SigmaNeighbouring=SOMTrain::SigmaNeighbouringInitial;
      int bmuX;
      int bmuY;
      while(finned<Iters){
+         LearningRate = UpdateLearningRate( finned,Iters);
+        SigmaNeighbouring = UpdateSigmaNeighbouring(finned,Iters,SOMTrain::xsize);
         int j = GenerateRandomNumber(SOMTrain::NumberInputVectors);
         SOMTrain::Score = 0;
         for (int RowMap=0;RowMap<SOMTrain::xsize;RowMap++){
@@ -324,8 +319,7 @@ public SOMLearningFunction, public PrintSOM, public EuclideanDistance, public Up
                 
             //}
         // Update Learning Rate
-            LearningRate = UpdateLearningRate(SOMTrain::LearningRateInitial,SOMTrain::LearningRateFinal, finned, SOMTrain::lambda);
-            SigmaNeighbouring = UpdateSigmaNeighbouring(SOMTrain::SigmaNeighbouringInitial,SOMTrain::SigmaNeighbourhoodFinal,  finned, SOMTrain::lambda);
+            
                finned++;
     }
         /*for (i[j]=0; i<Iters; ){
